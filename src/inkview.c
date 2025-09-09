@@ -3,11 +3,7 @@
 
 static int (*current_handler)(int, int, int) = NULL;
 
-EM_JS(void, js_clear_screen, (), {
-    if (window.inkviewAPI && window.inkviewAPI.js_clear_screen) {
-        window.inkviewAPI.js_clear_screen();
-    }
-});
+EM_JS(void, ClearScreen, (), { window.inkviewAPI.ClearScreen() });
 
 EM_JS(void, js_draw_line, (int x1, int y1, int x2, int y2, int color), {
     if (window.inkviewAPI && window.inkviewAPI.js_draw_line) {
@@ -56,10 +52,9 @@ EM_JS(int, js_screen_height, (), {
 });
 
 // Реализация API
-void ClearScreen() { js_clear_screen(); }
 void DrawLine(int x1, int y1, int x2, int y2, int color) { js_draw_line(x1, y1, x2, y2, color); }
 void FillArea(int x, int y, int w, int h, int color) { js_fill_area(x, y, w, h, color); }
-void DrawTextRect(int x, int y, int w, int h, const char* text, int align) { js_draw_text(x + w/2, y + h/2, text, align); }
+char *DrawTextRect(int x, int y, int w, int h, const char *s, int flags) { js_draw_text(x + w/2, y + h/2, s, flags); }
 ifont* OpenFont(const char* name, int size, int flag) { js_set_font(name, size); return (ifont*)1; }
 void CloseFont(ifont* font) { }
 int ScreenWidth() { return js_screen_width(); }

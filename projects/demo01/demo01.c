@@ -6,7 +6,7 @@ static const int kFontSize = 42;
 // Убираем static!
 int main_handler(int event_type, int param_one, int param_two)
 {
-    printf("HELLO MAIN HANDLER\n");
+    printf("HELLO MAIN HANDLER %d\n", event_type);
     if (EVT_INIT == event_type) {
         ifont *font = OpenFont("Arial", kFontSize, 0);
 
