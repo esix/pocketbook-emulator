@@ -19,22 +19,39 @@ const EVT_UNFOCUS = 37
 const EVT_ACTIVATE = 38
 
 let canvas, ctx;
-let pocketBookModule;
+let _Module;
 
 function updateStatus(msg) {
   document.getElementById('status').innerText = msg;
   console.log(msg);
 }
 
+let main_handler;
+
+
 // API функции
+// Придется сделать объект глобальным
 const inkviewAPI = {
-  ClearScreen: function() {
+  iv_get_default_font: (fonttype) => {debugger},
+
+  ClearScreen: () => {
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     updateStatus("Screen cleared");
   },
-
-  js_draw_line: function(x1, y1, x2, y2, color) {
+  OpenScreen: () => { debugger },
+  OpenScreenExt: () => {debugger},
+  InkViewMain: (pfnCallback) => {
+    main_handler = pfnCallback;
+    const result = callMainHandler(EVT_INIT, 0, 0);
+    console.log(result); // 10
+  },
+  CloseApp: () => {
+    updateStatus("Application closed");
+  },
+  SetClip: (x, y, w, h) => {debugger},
+  DrawPixel: (x, y, color) => { debugger;  },
+  DrawLine: function(x1, y1, x2, y2, color) {
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
@@ -43,46 +60,52 @@ const inkviewAPI = {
     updateStatus(`Line drawn: (${x1},${y1}) to (${x2},${y2})`);
   },
 
-  js_fill_area: function(x, y, w, h, color) {
+  FillArea: function(x, y, w, h, color) {
     ctx.fillStyle = `#${(color >>> 0).toString(16).padStart(6, '0')}`;
     ctx.fillRect(x, y, w, h);
     updateStatus(`Area filled: (${x},${y}) ${w}x${h}`);
   },
 
-  js_draw_text: function(x, y, text, align) {
+  DrawTextRect: function(x, y, w, h, text, flags) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#000000';
     ctx.font = '20px Arial';
-    ctx.fillText(text, x, y);
+    ctx.fillText(text, x + w / 2, y + h / 2);
     updateStatus(`Text drawn: "${text}" at (${x},${y})`);
   },
 
-  js_set_font: function(name, size) {
+  OpenFont: (name, size, aa) => {
     ctx.font = `${size}px "${name}"`;
     updateStatus(`Font set: "${name}", size ${size}`);
+    // TODO: return ifont*
+    // return (ifont*)1
+    return 1;
   },
-
-  js_screen_width: function() {
+  CloseFont(f) {
+  },
+  SetFont(font, color) {
+  },
+  FullUpdate() {
+  },
+  ScreenWidth: function() {
     return canvas.width;
   },
 
-  js_screen_height: function() {
+  ScreenHeight: function() {
     return canvas.height;
   },
-
-  js_close_app: function() {
-    updateStatus("Application closed");
-  }
 };
 
 // Функция для вызова обработчика событий из C
 function callMainHandler(event_type, param_one, param_two) {
-  if (pocketBookModule && pocketBookModule._call_main_handler) {
-    pocketBookModule._call_main_handler(event_type, param_one, param_two);
-  } else {
-    console.error("Module or call_main_handler not available");
-  }
+  const myFunction = _Module.wasmTable.get(main_handler);
+
+  // Вызываем функцию
+  const result = myFunction(event_type, param_one, param_two);
+  console.log(result); // 10
+  return result;
+
 }
 
 // Инициализация приложения
@@ -106,13 +129,13 @@ async function initApp() {
     const {default: createPocketBookModule} = await import('../projects/demo01/index.mjs');
 
     // Загружаем модуль
-    pocketBookModule = await createPocketBookModule();
+    _Module = await createPocketBookModule({api: inkviewAPI});
 
     updateStatus("WASM module loaded");
 
     // Запускаем приложение
     updateStatus("Starting application...");
-    pocketBookModule._main();
+    _Module._main();
 
     // Добавляем обработчики событий
     setupEventHandlers();
