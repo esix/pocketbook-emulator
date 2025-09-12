@@ -14,7 +14,6 @@
 #include <sys/wait.h>
 #include <dirent.h>
 #include <fcntl.h>
-#include <grp.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
@@ -23,7 +22,6 @@
 #include <errno.h>
 #include <zlib.h>
 #include <ft2build.h>
-#include <pthread.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 #include FT_IMAGE_H
@@ -36,8 +34,6 @@ extern "C"
 
 #define APP_UID 101
 #define APP_GID 101
-#define SECAPP_UID 102
-#define SECAPP_GID 102
 
 #ifndef IVSAPP
 #if !defined(__CYGWIN__) && defined(__i386__)
@@ -52,7 +48,6 @@ extern "C"
 #define USERDATA FLASHDIR "/system"
 #define USERDATA2 SDCARDDIR "/system"
 #define TEMPDIR DIRPREFIX "/tmp"
-#define SECUREDIR DIRPREFIX "/mnt/secure"
 #else
 #define FLASHDIR "./system/mnt/ext1"
 #define SDCARDDIR "./system/mnt/ext2"
@@ -61,7 +56,6 @@ extern "C"
 #define USERDATA SYSTEMDATA
 #define USERDATA2 SDCARDDIR "/system"
 #define TEMPDIR "./system/tmp"
-#define SECUREDIR "./system/mnt/secure"
 #endif
 
 #define SYSTEMFONTDIR SYSTEMDATA "/fonts"
@@ -86,14 +80,12 @@ extern "C"
 #define SYSTEMKBDPATH SYSTEMDATA "/language/keyboard"
 #define USERKBDPATH USERDATA "/language/keyboard"
 #define SYSTEMDICTPATH SYSTEMDATA "/dictionaries"
-#define SECUREDICTPATH SECUREDIR "/dictionaries"
 #define USERDICTPATH1 USERDATA "/dictionaries"
 #define USERDICTPATH2 USERDATA2 "/dictionaries"
 #define SYSTEMLOGOPATH SYSTEMDATA "/logo"
 #define USERLOGOPATH USERDATA "/logo"
 #define NOTESPATH FLASHDIR "/notes"
 #define GAMEPATH FLASHDIR "/applications"
-#define OLDGAMEPATH FLASHDIR "/games"
 #define USERAPPDIR USERDATA "/bin"
 #define CACHEPATH USERDATA "/cache"
 #define BACKUPDIR SDCARDDIR "/backup"
@@ -101,10 +93,6 @@ extern "C"
 #define SYSTEMBOOKSHELF SYSTEMDATA "/bin/bookshelf.app"
 #define USERMPD USERDATA "/bin/mpd.app"
 #define SYSTEMMPD SYSTEMDATA "/bin/mpd.app"
-#define USEREXPLORER USERDATA "/bin/explorer.app"
-#define SYSTEMEXPLORER SYSTEMDATA "/bin/explorer.app"
-#define USERTASKMGR USERDATA "/bin/taskmgr.app"
-#define SYSTEMTASKMGR SYSTEMDATA "/bin/taskmgr.app"
 #define STATECLEANER SYSTEMDATA "/bin/cleanstate.sh"
 #define BACKUPSCRIPT SYSTEMDATA "/bin/backup.sh"
 #define RESTORESCRIPT SYSTEMDATA "/bin/restore.sh"
@@ -130,79 +118,32 @@ extern "C"
 #define WEBCACHEINDEX WEBCACHE "/index"
 #define WIDGETSCONFIG CONFIGPATH "/widgets"
 #define WIDGETSOPEN WIDGETSCONFIG "/open.cfg"
-#define SWUPDATESTATUS SECUREDIR "/swupdate.db"
-#define TASKINFOPATH "/var/run/task"
 
-//#define DEFAULTFONT "LiberationSans"
-//#define DEFAULTFONTB "LiberationSans-Bold"
-//#define DEFAULTFONTI "LiberationSans-Italic"
-//#define DEFAULTFONTBI "LiberationSans-BoldItalic"
-//#define DEFAULTFONTM "LiberationMono"
+#define DEFAULTFONT "LiberationSans"
+#define DEFAULTFONTB "LiberationSans-Bold"
+#define DEFAULTFONTI "LiberationSans-Italic"
+#define DEFAULTFONTBI "LiberationSans-BoldItalic"
+#define DEFAULTFONTM "LiberationMono"
 
 #define PF_LOCAL  0x01
 #define PF_SDCARD 0x02
 
 #define SYSTEMDEPTH 8
 
-#define MAXMSGSIZE 65520
-
-#define MSG_REQUEST  0x7fffffff
-#define MSG_XREQUEST 0x7c000000
+#define MSG_REQUEST 0x7fffffff
 #define MSG_OK 1
 #define MSG_ERROR 0
 
-#define MSG_FORMAT            0x101
-#define MSG_SETTIME           0x102
-#define MSG_SETPROFILE        0x103
-#define MSG_PWENCRYPT         0x104
-#define MSG_PWDECRYPT         0x105
-#define MSG_RESTART           0x106
-#define MSG_REMOUNTFS         0x107
-#define MSG_WRITELOGO         0x108
-#define MSG_RESTORELOGO       0x109
-#define MSG_SUSPEND           0x10a
-#define MSG_IOC_ENCRYPT       0x10b
-#define MSG_IOC_DECRYPT       0x10c
-#define MSG_REG_CHECK         0x10d
-#define MSG_REG_WRITE         0x10e
-#define MSG_GETSERIAL         0x10f
-#define MSG_REBOOT	      0x110
-#define MSG_REBOOT_AND_UPDATE 0x111
-#define MSG_TIMESTAMP         0x112
-#define MSG_UPDATESTATUS      0x113
-#define MSG_DISABLE_GSENSOR   0x114
-#define MSG_ENABLE_GSENSOR    0x115
-#define MSG_CONFIG_CHANGED    0x116
-
-#define MSG_FBINFO            0x201
-#define MSG_ORIENTATION       0x202
-#define MSG_UPDPARTIAL        0x203
-#define MSG_UPDDYNAMIC        0x204
-#define MSG_UPDFULL           0x205
-#define MSG_EINKPM            0x206
-#define MSG_EINKTEMP          0x207
-
-#define MSG_TASK_REGISTER       0x501
-#define MSG_TASK_NEWSUBTASK     0x502
-#define MSG_TASK_SWITCHSUBTASK  0x503
-#define MSG_TASK_ENDSUBTASK     0x504
-#define MSG_TASK_SETPARAMETERS  0x505
-#define MSG_TASK_SETSUBTASKINFO 0x506
-#define MSG_TASK_FOREGROUND     0x507
-#define MSG_TASK_BACKGROUND     0x508
-#define MSG_TASK_CLOSE          0x509
-#define MSG_TASK_LIST           0x50a
-#define MSG_TASK_PREVIOUS       0x50b
-#define MSG_TASK_INFO           0x50c
-#define MSG_TASK_SENDEVENT      0x50d
-#define MSG_TASK_SENDREQUEST    0x50e
-#define MSG_TASK_ADDREQLISTENER 0x510
-#define MSG_TASK_DELREQLISTENER 0x511
-#define MSG_TASK_GLOBALREQUEST  0x512
-#define MSG_TASK_SENDEVENTSYNC  0x513
-
-#define MSG_DEVICEKEY         0xad0be01
-#define MSG_RESETKEY          0xad0be02
+#define MSG_FORMAT     0x101
+#define MSG_SETTIME    0x102
+#define MSG_SETPROFILE 0x103
+#define MSG_PWENCRYPT  0x104
+#define MSG_PWDECRYPT  0x105
+#define MSG_RESTART    0x106
+#define MSG_REMOUNTFS  0x107
+#define MSG_REG_CHECK	 0x10d
+#define MSG_REG_WRITE	 0x10e
+#define MSG_DEVICEKEY  0xad0be01
 
 #define EVT_INIT 21
 #define EVT_EXIT 22
@@ -220,21 +161,13 @@ extern "C"
 #define EVT_POINTERLONG 34
 #define EVT_POINTERHOLD 35
 #define EVT_ORIENTATION 32
-#define EVT_FOCUS 36
-#define EVT_UNFOCUS 37
-#define EVT_ACTIVATE 38
 
 #define EVT_TOUCHUP   40
 #define EVT_TOUCHDOWN 41
 #define EVT_TOUCHMOVE 42
 
-#define EVT_QN_MOVE    51
-#define EVT_QN_RELEASE 52
-#define EVT_QN_BORDER  53
-
 #define EVT_SNAPSHOT 71
-#define EVT_FSINCOMING 72
-#define EVT_FSCHANGED 73
+#define EVT_FSCHANGED 72
 
 #define EVT_MP_STATECHANGED 81
 #define EVT_MP_TRACKCHANGED 82
@@ -242,8 +175,6 @@ extern "C"
 #define EVT_PREVPAGE 91
 #define EVT_NEXTPAGE 92
 #define EVT_OPENDIC  93
-
-#define EVT_PANEL_BLUETOOTH_A2DP 118
 
 #define EVT_TAB 119
 #define EVT_PANEL 120
@@ -255,26 +186,12 @@ extern "C"
 #define EVT_PANEL_NETWORK 126
 #define EVT_PANEL_CLOCK 127
 #define EVT_PANEL_BLUETOOTH 128
-#define EVT_PANEL_TASKLIST 129
-
-#define EVT_GLOBALREQUEST 149
-#define EVT_GLOBALACTION  150
-#define EVT_FOREGROUND    151
-#define EVT_BACKGROUND    152
-#define EVT_SUBTASKCLOSE  153
-#define EVT_CONFIGCHANGED 154
-
-#define EVT_SDIN          161
-#define EVT_SDOUT         162
 
 #define EVT_BT_RXCOMPLETE 171
 #define EVT_BT_TXCOMPLETE 172
 
 #define EVT_SYNTH_ENDED 200
 #define EVT_DIC_CLOSED	201
-#define	EVT_SHOW_KEYBOARD 202
-
-#define EVT_EXT_KB		210
 
 #define ISKEYEVENT(x) ((x)>=25 && (x)<=28)
 #define ISPOINTEREVENT(x) (((x)>=29 && (x)<=31) || ((x)>=34 && (x)<=35))
@@ -294,7 +211,6 @@ extern "C"
 #undef KEY_NEXT
 #undef KEY_MINUS
 #undef KEY_PLUS
-#undef KEY_HOME
 #undef KEY_0
 #undef KEY_1
 #undef KEY_2
@@ -305,35 +221,23 @@ extern "C"
 #undef KEY_7
 #undef KEY_8
 #undef KEY_9
-/* added support for EP34 keys */
-#undef KEY_ZOOMIN
-#undef KEY_ZOOMOUT
 
-#define KEY_POWER  0x01
+#define KEY_BACK 0x1b
 #define KEY_DELETE 0x08
-#define KEY_OK     0x0a
-#define KEY_UP     0x11
-#define KEY_DOWN   0x12
-#define KEY_LEFT   0x13
-#define KEY_RIGHT  0x14
-#define KEY_MINUS  0x15
-#define KEY_PLUS   0x16
-#define KEY_MENU   0x17
-#define KEY_PREV   0x18
-#define KEY_NEXT   0x19
-#define KEY_HOME   0x1a
-#define KEY_BACK   0x1b
-#define KEY_PREV2  0x1c
-#define KEY_NEXT2  0x1d
-#define KEY_MUSIC  0x1e
-/* added support for EP34 keys */
-#define KEY_ZOOMOUT 0x06
-#define KEY_ZOOMIN  0x07
-
-/* KEYBOARD STATE KEYS */
-#define KEY_SHIFT 0x40
-#define KEY_LANGUAGECHANGE 0x41
-#define KEY_KEYBOARDCLOSE 0x42
+#define KEY_OK 0x0a
+#define KEY_UP 0x11
+#define KEY_DOWN 0x12
+#define KEY_LEFT 0x13
+#define KEY_RIGHT 0x14
+#define KEY_MINUS 0x15
+#define KEY_PLUS 0x16
+#define KEY_MENU 0x17
+#define KEY_MUSIC 0x1e
+#define KEY_POWER 0x01
+#define KEY_PREV 0x18
+#define KEY_NEXT 0x19
+#define KEY_PREV2 0x1c
+#define KEY_NEXT2 0x1d
 
 #define KEY_0 0x30
 #define KEY_1 0x31
@@ -346,10 +250,6 @@ extern "C"
 #define KEY_8 0x38
 #define KEY_9 0x39
 
-#define KEYMAPPING_GLOBAL 0
-#define KEYMAPPING_TXT    1
-#define KEYMAPPING_PDF    2
-
 #define BLACK 0x000000
 #define DGRAY 0x555555
 #define LGRAY 0xaaaaaa
@@ -361,10 +261,7 @@ extern "C"
 #define ITEM_SUBMENU 5
 #define ITEM_SEPARATOR 6
 #define ITEM_BULLET 7
-
-#define ITEM_TYPEMASK 31
 #define ITEM_HIDDEN 128
-#define ITEM_OLDMENU 32768
 
 #define KBD_NORMAL 0
 #define KBD_ENTEXT 1
@@ -375,8 +272,8 @@ extern "C"
 #define KBD_URL 7
 #define KBD_DATE 8
 #define KBD_TIME 9
-#define KBD_DATETIME 0x0A
-#define KBD_HEX 0x0B
+#define KBD_DATETIME 10
+#define KBD_HEX 11
 
 #define KBD_UPPER 0x10
 #define KBD_LOWER 0x20
@@ -386,9 +283,7 @@ extern "C"
 #define KBD_NOSELECT  0x200
 #define KBD_SCREENTOP 0x400
 
-#define KBD_NOTOUCH    0x4000
 #define KBD_PASSEVENTS 0x8000
-#define KBD_SENDKEYBOARDSTATEEVENTS 0x2000
 
 #define ICON_INFORMATION 1
 #define ICON_QUESTION 2
@@ -397,10 +292,6 @@ extern "C"
 
 #define DEF_BUTTON1 0
 #define DEF_BUTTON2 0x1000
-#define DEF_BUTTON3 0x2000
-#define NO_DISMISS  0x8000
-
-#define WITH_SIZE   1
 
 #define PANELICON_BOOK ((const ibitmap *) -11)
 #define PANELICON_LOAD ((const ibitmap *) -12)
@@ -439,61 +330,10 @@ extern "C"
 #define CFG_URL 12
 #define CFG_PHONE 13
 #define CFG_ACTIONS 14
-#define CFG_CHOICE_SPECIAL_FONT 15
 #define CFG_CUSTOM 30
 #define CFG_SUBMENU 31
 
 #define CFG_HIDDEN 128
-
-#define ALLTASKS       -1
-#define MAINTASK       -2
-#define OTHERTASKS     -3
-#define THISTASK       -4
-#define ACTIVETASK     -5
-#define MPLAYERTASK    -6
-#define DICTIONARYTASK -7
-#define ALLSUBTASKS    -1
-#define CURRENTSUBTASK -6
-
-#define TASK_HIDDEN          0x0001
-#define TASK_COPYLASTFB      0x0002
-#define TASK_NOUPDATEONFOCUS 0x0004
-#define TASK_SINGLEINSTANCE  0x0008
-#define TASK_SPYEVENTS       0x0010
-#define TASK_OUTOFSTACK      0x0020
-#define TASK_NOFORCEDKILL    0x0040
-#define TASK_MAKEACTIVE      0x0080
-#define TASK_GROUP1          0x0100
-#define TASK_GROUP2          0x0200
-#define TASK_AUTORESTART     0x8000
-#define TASK_DONTCHANGE      0xffffffff
-
-#define RQL_ADD		1
-#define RQL_REPLACE	2
-#define RQL_ADDIFNONE	3
-#define RQL_REMOVE	4
-
-#define REQ_KEYLOCK     65
-#define REQ_MAINMENU    66
-#define REQ_EXIT        67
-#define REQ_LASTOPEN    68
-#define REQ_PROFILES    69
-#define REQ_SCREENSHOT  70
-#define REQ_CALC        71
-#define REQ_PLAYER      72
-#define REQ_PLAYPAUSE   73
-#define REQ_VOLUMEUP    74
-#define REQ_VOLUMEDOWN  75
-#define REQ_NETWORK     76
-#define REQ_BTSWITCH    77
-#define REQ_DROPCONN    78 
-#define REQ_TASKMGR     79
-#define REQ_SWITCHTASK  80
-#define REQ_FLIPTASK    81
-#define REQ_KILLTASK    82
-#define REQ_POWEROFF    83
-#define REQ_OPENBOOK	84
-#define REQ_BOOKSTATE	85
 
 #define ALIGN_LEFT 1
 #define ALIGN_CENTER 2
@@ -518,7 +358,6 @@ extern "C"
 #define SYMBOL_PAUSE  6
 #define SYMBOL_BULLET 7
 #define ARROW_UPDOWN  8
-#define SYMBOL_MENU	  9
 
 #define IMAGE_BW    1
 #define IMAGE_GRAY2 2
@@ -537,13 +376,6 @@ extern "C"
 #define DITHER_THRESHOLD 0
 #define DITHER_PATTERN 1
 #define DITHER_DIFFUSION 2
-
-#define QN_X       0x01000
-#define QN_Y       0x02000
-#define QN_XY      0x03000
-#define QN_SWAIT   0x04000
-#define QN_RWAIT   0x08000
-#define QN_CLEANUP 0x10000
 
 #define MP_STOPPED 0
 #define MP_REQUEST_FOR_PLAY 1
@@ -564,23 +396,18 @@ extern "C"
 #define FTYPE_WEBLINK 5
 #define FTYPE_FOLDER 255
 
-#define OB_ADDTOLAST   0x01
-#define OB_WITHRETURN  0x02
-#define OB_PARAMSFIRST 0x04
-#define OB_NONEWTASK   0x08
-#define OB_SOFTUPDATE  0x10
+#define OB_ADDTOLAST  0x01
+#define OB_WITHRETURN 0x02
+#define OB_SOFTUPDATE 0x10
 
-#define NET_BLUETOOTH	0x0001
-#define NET_WIFI	0x0002
-#define NET_CDMA3G	0x0004
-#define NET_BTREADY	0x0100
-#define NET_WIFIREADY	0x0200
-#define NET_CDMA3GREADY	0x0400
-#define NET_CONNECTED	0x0f00
+#define NET_BLUETOOTH  0x0001
+#define NET_WIFI       0x0002
+#define NET_BTREADY    0x0100
+#define NET_WIFIREADY  0x0200
+#define NET_CONNECTED  0x0f00
 
-#define CONN_GPRS	1
-#define CONN_WIFI	2
-#define CONN_CDMA3G	3
+#define CONN_GPRS 1
+#define CONN_WIFI 2
 
 #define BLUETOOTH_OFF 0
 #define BLUETOOTH_HIDDEN 1
@@ -625,36 +452,6 @@ extern "C"
 #define VN_ABSOLUTE 0x04
 #define VN_RELATIVE 0x08
 
-#define A2DP_DISCONNECTED 0
-#define A2DP_CONNECTED_TO_SNK 1
-
-/* Curl Flags (CF) */
-#define CF_CONFIG_RESUME 1
-
-// Vlad >>>>>>>>>
-#define FONT_ACTIVATE_CODE 0x8FA5F3C7
-// Vlad <<<<<<<<<
-
-// DEFAULT FONTS
-typedef enum
-{
-	FONT_STD = 0,
-	FONT_BOLD = 1,
-	FONT_ITALIC = 2,
-	FONT_BOLDITALIC = 3,
-	FONT_MONO = 4
-} FONT_TYPE;
-
-char *iv_get_default_font(FONT_TYPE fonttype);
-
-#define DEFAULTFONT iv_get_default_font(FONT_STD)
-#define DEFAULTFONTB iv_get_default_font(FONT_BOLD)
-#define DEFAULTFONTI iv_get_default_font(FONT_ITALIC)
-#define DEFAULTFONTBI iv_get_default_font(FONT_BOLDITALIC)
-#define DEFAULTFONTM iv_get_default_font(FONT_MONO)
-//
-#define I_UNUSED(arg) (void)arg;
-
 typedef struct irect_s {
 
 	short x;
@@ -694,8 +491,6 @@ typedef int  (*iv_listhandler)(int action, int x, int y, int idx, int state);
 typedef void (*iv_rotatehandler)(int direction);
 typedef int  (*iv_turnproc)(int direction);
 typedef int  (*iv_recurser)(char *path, int type, void *data);
-typedef int  (*iv_msghandler)(int task, void *message, int len);
-typedef int  (*iv_requestlistener)(int request, void *data, int inlen, int outlen);
 
 typedef int  (*iv_hashenumproc)(char *name, void *value, void *userdata);
 typedef int  (*iv_hashcmpproc)(char *name1, void *value1, char *name2, void *value2);
@@ -726,18 +521,8 @@ typedef struct imenu_s {
 	short index;
 	char *text;
 	struct imenu_s *submenu;
+
 } imenu;
-
-typedef struct imenuex_s {
-
-	short type;
-	short index;
-	char *text;
-	struct imenuex_s *submenu;
-	ibitmap *icon;
-	void *reserved;
-
-} imenuex;
 
 typedef struct icanvas_s {
 
@@ -791,14 +576,15 @@ typedef struct iconfig_s {
 
 typedef struct iconfigedit_s {
 
-        int type;
-        const ibitmap *icon;
-        char *text;
-        char *hint;
-        char *name;
-        char *deflt;
-        char **variants;
-	struct iconfigedit_s *submenu; // if type == CFG_CHOICE_SPECIAL_FONT then submenu use as (ifont *)
+	int type;
+	const ibitmap *icon;
+	char *text;
+	char *hint;
+	char *name;
+	char *deflt;
+	char **variants;
+	struct iconfigedit_s *submenu;
+
 } iconfigedit;
 
 typedef struct oldconfigedit_s {
@@ -838,7 +624,6 @@ typedef struct bookinfo_s {
 	char *title;
 	char *author;
 	char *series;
-	int	 numinseries;
 	char *genre[10];
 	ibitmap *icon;
 	int year;
@@ -916,35 +701,6 @@ typedef struct iv_sessioninfo_s {
 
 } iv_sessioninfo;
 
-typedef struct subtaskinfo_s {
-
-	int id;
-	char *name;
-	char *book;
-	int fgindex;
-	int order;
-	int rsv_1s;
-
-} subtaskinfo;
-
-typedef struct taskinfo_s {
-
-	int task;
-	int nsubtasks;
-	unsigned int flags;
-	int fbshmkey;
-	int fbshmsize;
-	pid_t mainpid;
-	char *appname;
-	ibitmap *icon;
-	subtaskinfo *subtasks;
-	int rsv_1;
-	int rsv_2;
-	int rsv_3;
-	int rsv_4;
-
-} taskinfo;
-
 typedef iv_wlist* (*pointer_to_word_hand_t)(int x, int y, int forward);
 
 void OpenScreen();
@@ -996,10 +752,6 @@ ibitmap *BitmapFromScreen(int x, int y, int w, int h);
 ibitmap *BitmapFromScreenR(int x, int y, int w, int h, int rotate);
 ibitmap *NewBitmap(int w, int h);
 ibitmap *LoadJPEG(const char *path, int w, int h, int br, int co, int proportional);
-int SaveJPEG(const char *path, ibitmap *bmp, int quality);
-ibitmap *LoadPNG(const char *path, int dither);
-int SavePNG(const char *path, ibitmap *bmp);
-void SetTransparentColor(ibitmap **bmp, int color);
 void DrawBitmap(int x, int y, const ibitmap *b);
 void DrawBitmapArea(int x, int y, const ibitmap *b, int bx, int by, int bw, int bh);
 void DrawBitmapRect(int x, int y, int w, int h, ibitmap *b, int flags);
@@ -1015,14 +767,12 @@ char **EnumFonts();
 ifont *OpenFont(const char *name, int size, int aa);
 void CloseFont(ifont *f);
 void SetFont(ifont *font, int color);
-ifont *GetFont();
 void DrawString(int x, int y, const char *s);
 void DrawStringR(int x, int y, const char *s);
 int TextRectHeight(int width, const char *s, int flags);
 char *DrawTextRect(int x, int y, int w, int h, const char *s, int flags);
 char *DrawTextRect2(irect *rect, const char *s);
 int CharWidth(unsigned  short c);
-int StringWidthExt(const char *s, int l);
 int StringWidth(const char *s);
 int DrawSymbol(int x, int y, int symbol);
 void RegisterFontList(ifont **fontlist, int count);
@@ -1031,27 +781,21 @@ void SetTextStrength(int n);
 // Screen update functions
 
 void FullUpdate();
-void FullUpdateHQ();
 void SoftUpdate();
 void PartialUpdate(int x, int y, int w, int h);
-void PartialUpdateBlack(int x, int y, int w, int h);
 void PartialUpdateBW(int x, int y, int w, int h);
-void DynamicUpdate(int x, int y, int w, int h);
 void DynamicUpdateBW(int x, int y, int w, int h);
 void FineUpdate();
-//void DynamicUpdate();
+void DynamicUpdate();
 int FineUpdateSupported();
-int HQUpdateSupported();
-void ScheduleUpdate(int x, int y, int w, int h, int bw);
 
 // Event handling functions
+
 iv_handler SetEventHandler(iv_handler hproc);
 iv_handler SetEventHandlerEx(iv_handler hproc);
 iv_handler GetEventHandler();
 void SendEvent(iv_handler hproc, int type, int par1, int par2);
 void FlushEvents();
-char *iv_evttype(int type);
-char IsAnyEvents();
 
 // Timer functions
 
@@ -1063,8 +807,6 @@ void ClearTimer(iv_timerproc tproc);
 // UI functions
 
 void OpenMenu(imenu *menu, int pos, int x, int y, iv_menuhandler hproc);
-void OpenMenuEx(imenuex *menu, int pos, int x, int y, iv_menuhandler hproc);
-void UpdateMenuEx(imenuex *menu);
 void OpenMenu3x3(const ibitmap *mbitmap, const char *strings[9], iv_menuhandler hproc);
 void OpenList(const char *title, const ibitmap *background, int itemw, int itemh, int itemcount, int cpos, iv_listhandler hproc);
 void OpenDummyList(const char *title, const ibitmap *background, char *text, iv_listhandler hproc);
@@ -1073,8 +815,6 @@ void LoadKeyboard(const char *kbdlang);
 void OpenKeyboard(const char *title, char *buffer, int maxlen, int flags, iv_keyboardhandler hproc);
 void OpenCustomKeyboard(const char *filename, const char *title, char *buffer, int maxlen, int flags, iv_keyboardhandler hproc);
 void CloseKeyboard();
-void GetKeyboardRect(irect *rect);
-int IsKeyboardOpened();
 void OpenPageSelector(iv_pageselecthandler hproc);
 void OpenTimeEdit(const char *title, int x, int y, long intime, iv_timeedithandler hproc);
 void OpenDirectorySelector(const char *title, char *buf, int len, iv_dirselecthandler hproc);
@@ -1087,7 +827,6 @@ void OpenContents(tocentry *toc, int count, long long position, iv_tochandler hp
 void OpenRotateBox(iv_rotatehandler hproc);
 void Message(int icon, const char *title, const char *text, int timeout);
 void Dialog(int icon, const char *title, const char *text, const char *button1, const char *button2, iv_dialoghandler hproc);
-void Dialog3(int icon, const char *title, const char *text, const char *button1, const char *button2, const char *button3, iv_dialoghandler hproc);
 void CloseDialog();
 void OpenProgressbar(int icon, const char *title, const char *text, int percent, iv_dialoghandler hproc);
 int  UpdateProgressbar(const char *text, int percent);
@@ -1096,15 +835,11 @@ void ShowHourglass();
 void ShowHourglassAt(int x, int y);
 void HideHourglass();
 void DisableExitHourglass();
-void LockDevice();
 void SetPanelType(int type);
 int  DrawPanel(const ibitmap *icon, const char *text, const char *title, int percent);
 int  DrawTabs(const ibitmap *icon, int current, int total);
 int  PanelHeight();
 void SetKeyboardRate(int t1, int t2);
-int QuickNavigatorSupported(int flags);
-void QuickNavigator(int x, int y, int w, int h, int cx, int cy, int flags);
-void SetQuickNavigatorXY(int x, int y);
 
 // Configuration functions
 
@@ -1128,44 +863,8 @@ void OpenConfigSubmenu(const char *title, iconfigedit *ice);
 void UpdateCurrentConfigPage();
 void UpdateConfigPage(const char *title, iconfigedit *ice);
 void CloseConfigLevel();
-void NotifyConfigChanged();
 void GetKeyMapping(char *act0[], char *act1[]);
-void GetKeyMappingEx(int what, char *act0[], char *act1[], int count);
 unsigned long QueryDeviceButtons();
-
-// Multitasking
-
-#define TCAP(s) (0x50000000 | ((s[0] & 0x7f) | ((s[1] & 0x7f) << 7) | ((s[2] & 0x7f) << 14) | ((s[3] & 0x7f) << 21))
-
-int MultitaskingSupported();
-int NewTask(char *path, char *args[], char *appname, char *name, ibitmap *icon, unsigned int flags);
-int NewSubtask(char *name);
-int SwitchSubtask(int subtask);
-void SubtaskFinished(int subtask);
-int GetCurrentTask();
-void GetActiveTask(int *task, int *subtask);
-int IsTaskActive();
-void GetPreviousTask(int *task, int *subtask);
-int GetTaskList(int *list, int size);
-taskinfo *GetTaskInfo(int task);
-int FindTaskByBook(char *name, int *task, int *subtask);
-int FindTaskByAppName(char *name);
-int SetTaskParameters(int task, char *appname, char *name, ibitmap *icon, unsigned int flags);
-int SetSubtaskInfo(int task, int subtask, char *name, char *book);
-int SetActiveTask(int task, int subtask);
-void GoToBackground();
-int CloseTask(int task, int subtask, int force);
-int SendEventTo(int task, int type, int par1, int par2);
-int SendEventSyncTo(int task, int type, int par1, int par2);
-int SendMessageTo(int task, int request, void *message, int len);
-int SetRequestListener(int request, int flags, iv_requestlistener hproc);
-int SendRequest(int request, void *data, int inlen, int outlen, int timeout);
-int SendRequestTo(int task, int request, void *data, int inlen, int outlen, int timeout);
-int SendGlobalRequest(int param);
-void SetMessageHandler(iv_msghandler hproc);
-void OpenTaskList();
-icanvas *GetTaskFramebuffer(int task);
-void ReleaseTaskFramebuffer(icanvas *fb);
 
 // String hash functions
 
@@ -1212,12 +911,10 @@ int iv_rename(const char *oldname, const char *newname);
 void iv_preload(const char *name, int count);
 void iv_sync();
 int iv_validate_name(const char *s, int flags);
-void iv_setbgresponse(int t);
 
 // ipc functions
 
 long iv_ipc_request(long type, long attr, unsigned char *data, int inlen, int outlen);
-long iv_ipc_request_secure(long type, long param, unsigned char *data, int inlen, int outlen);
 long iv_ipc_cmd(long type, long param);
 
 // Language functions
@@ -1231,16 +928,13 @@ void SetRTLBook(int rtl);
 int IsRTL();  // depends only on the system language
 int IsBookRTL();	// can be overwritten by application
 
-//#define T(x) GetLangText(#x)
-//#define TF(x...) GetLangTextF(x)
+#define T(x) GetLangText(#x)
+#define TF(x...) GetLangTextF(x)
 
 // User profile functions
 
 char **EnumProfiles();
 int GetProfileType(const char *name);
-ibitmap **EnumProfileAvatars();
-ibitmap *GetProfileAvatar(const char *name);
-int SetProfileAvatar(const char *name, ibitmap *ava);
 int CreateProfile(const char *name, int type);
 int RenameProfile(const char *oldname, const char *newname);
 int DeleteProfile(const char *name);
@@ -1267,20 +961,17 @@ char *GetAssociatedFile(const char *name, int index);
 char *CheckAssociatedFile(const char *name, int index);
 void SetReadMarker(const char *name, int isread);
 iv_filetype *FileType(const char *path);
-iv_filetype *FileTypeExt(const char *path, struct stat *f_stat);
 void SetFileHandler(const char *path, const char *handler);
 char *GetFileHandler(const char *path);
-int OpenBook(const char *path, const char *parameters, int flags);
+void OpenBook(const char *path, const char *position, int flags);
 void BookReady(const char *path);
 char **GetLastOpen();
 void AddLastOpen(const char *path);
 void OpenLastBooks();
-void FlushLastOpen();
 
 // Media functions
 
 void OpenPlayer();
-void ClosePlayer();
 void PlayFile(const char *filename);
 void LoadPlaylist(char **pl);
 char **GetPlaylist();
@@ -1340,7 +1031,6 @@ char *iv_reflow_getword(int n, int *spnum, int *x, int *y, int *w, int *h);
 void iv_reflow_clear();
 
 // Additional functions
-void iv_fullscreen();
 void iv_sleepmode(int on);
 int GetSleepmode();
 int GetBatteryPower();
@@ -1365,20 +1055,15 @@ void SetAutoPowerOff(int en);
 void PowerOff();
 int SafeMode();
 void OpenMainMenu();
-void CloseAllTasks();
 int WriteStartupLogo(const ibitmap *bm);
 int PageSnapshot();
 int RestoreStartupLogo();
 int QueryTouchpanel();
 void CalibrateTouchpanel();
 void OpenCalendar();
-int StartSoftwareUpdate();
-int HavePowerForSoftwareUpdate();
 
 int QueryNetwork();
 char *GetHwAddress();
-char *GetHwBTAddress();
-char *GetHw3GIMEI();
 int GetBluetoothMode();
 int SetBluetoothMode(int mode, int flags);
 char **EnumBTdevices();
@@ -1389,12 +1074,7 @@ char **EnumConnections();
 int GetBTservice(const char *mac, const char *service);
 int NetConnect(const char *name);
 int NetDisconnect();
-iv_netinfo *NetInfo();
 void OpenNetworkInfo();
-char *GetUserAgent();
-char *GetDefaultUserAgent();
-char *GetProxyUrl();
-void *QuickDownloadExt(const char *url, int *retsize, int timeout, char *cookie, char *post);
 void *QuickDownload(const char *url, int *retsize, int timeout);
 int NewSession();
 void CloseSession(int id);
@@ -1402,7 +1082,6 @@ void SetUserAgent(int id, const char *ua);
 void SetProxy(int id, const char *host, int port, const char *user, const char *pass);
 int Download(int id, const char *url, const char *postdata, FILE **fp, int timeout);
 int DownloadTo(int id, const char *url, const char *postdata, const char *filename, int timeout);
-int SetSessionFlag(int _id, int _flag, void *_value);
 int GetSessionStatus(int id);
 char * GetHeader(int id, const char *name);
 iv_sessioninfo *GetSessionInfo(int id);
@@ -1411,7 +1090,6 @@ void ResumeTransfer(int id);
 void AbortTransfer(int id);
 char *NetError(int e);
 void NetErrorMessage(int e);
-int GetA2dpStatus();
 
 
 int iv_strcmp(const char *s1, const char *s2);
@@ -1440,11 +1118,9 @@ int copy_file_with_af(const char *src, const char *dst);
 int move_file_with_af(const char *src, const char *dst);
 int unlink_file_with_af(const char *name);
 int recurse_action(const char *path, iv_recurser proc, void *data, int creative, int this_too);
-void LeaveInkViewMain();
-// dialog show on the screen
 
+// dialog show on the screen
 int GetDialogShow(); // 1 - dialog showing, 0 - dialog hidden.
-void SetMenuFont(ifont *font); // font for menu (one time using), need to set every times when open menu.
 
 #ifdef __cplusplus
 }

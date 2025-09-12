@@ -4,9 +4,6 @@
 static int (*current_handler)(int, int, int) = NULL;
 
 // api
-
-EM_JS(char*, iv_get_default_font, (FONT_TYPE fonttype), { return Module.api.iv_get_default_font(fonttype) });
-
 EM_JS(void, OpenScreen, (), { return Module.api.OpenScreen() });
 EM_JS(void, OpenScreenExt, (), { return Module.api.OpenScreenExt() });
 EM_JS(void, InkViewMain, (iv_handler handler), { return Module.api.InkViewMain(handler) });
@@ -15,11 +12,11 @@ EM_JS(void, CloseApp, (), { return Module.api.CloseApp() });
 EM_JS(int, ScreenWidth, (), { return Module.api.ScreenWidth() });
 EM_JS(int, ScreenHeight, (), { return Module.api.ScreenHeight() });
 
-// void SetOrientation(int n);
-// int GetOrientation();
-// void SetGlobalOrientation(int n);
-// int GetGlobalOrientation();
-// int QueryGSensor();
+EM_JS(void, SetOrientation, (int n), { return Module.api.SetOrientation(n) });
+EM_JS(int, GetOrientation, (), { return Module.api.GetOrientation() });
+EM_JS(void, SetGlobalOrientation, (int n), { return Module.api.SetOrientation(n) });
+EM_JS(int, GetGlobalOrientation, (), { return Module.api.SetOrientation(n) });
+EM_JS(int, QueryGSensor, (), { return Module.api.SetOrientation(n) });
 // void SetGSensor(int mode);
 // int ReadGSensor(int *x, int *y, int *z);
 // void CalibrateGSensor();

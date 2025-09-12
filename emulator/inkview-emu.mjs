@@ -32,13 +32,6 @@ let main_handler;
 // API функции
 // Придется сделать объект глобальным
 const inkviewAPI = {
-  iv_get_default_font: (fonttype) => {debugger},
-
-  ClearScreen: () => {
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    updateStatus("Screen cleared");
-  },
   OpenScreen: () => { debugger },
   OpenScreenExt: () => {debugger},
   InkViewMain: (pfnCallback) => {
@@ -46,8 +39,24 @@ const inkviewAPI = {
     const result = callMainHandler(EVT_INIT, 0, 0);
     console.log(result); // 10
   },
-  CloseApp: () => {
-    updateStatus("Application closed");
+  CloseApp: () => { updateStatus("Application closed");},
+
+  ScreenWidth: () => canvas.width,                      // 600
+  ScreenHeight: () => canvas.height,                    // 800
+
+  SetOrientation: (n) => {debugger},
+  GetOrientation: () => 0,
+  SetGlobalOrientation: (n) => { debugger },
+  GetGlobalOrientation: () => -1,
+  QueryGSensor: () => 1,
+  // void SetGSensor(int mode);
+  // int ReadGSensor(int *x, int *y, int *z);
+  // void CalibrateGSensor();
+
+  ClearScreen: () => {
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    updateStatus("Screen cleared");
   },
   SetClip: (x, y, w, h) => {debugger},
   DrawPixel: (x, y, color) => { debugger;  },
@@ -75,11 +84,29 @@ const inkviewAPI = {
     updateStatus(`Text drawn: "${text}" at (${x},${y})`);
   },
 
+  _fonts: [],
   OpenFont: (name, size, aa) => {
     ctx.font = `${size}px "${name}"`;
     updateStatus(`Font set: "${name}", size ${size}`);
     // TODO: return ifont*
     // return (ifont*)1
+    this._fonts.push({
+      name: name,
+      family: 'LiberationSans',
+      size: size,
+      aa: 0,
+      isbold: 0,
+      isitalic: 0,
+      _r1: 0,
+      charset: 1,
+      _r2: 0,
+      color: 0,
+      height: 10,       // ? passed 8
+      linespacing: 10,
+      baseline: 8,
+      fdata: null,    // really some data
+    });
+
     return 1;
   },
   CloseFont(f) {
@@ -88,13 +115,7 @@ const inkviewAPI = {
   },
   FullUpdate() {
   },
-  ScreenWidth: function() {
-    return canvas.width;
-  },
 
-  ScreenHeight: function() {
-    return canvas.height;
-  },
 };
 
 // Функция для вызова обработчика событий из C
