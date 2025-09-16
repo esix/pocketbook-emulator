@@ -1,7 +1,19 @@
 #include "inkview.h"
 #include <emscripten.h>
 
-static int (*current_handler)(int, int, int) = NULL;
+// helper function
+EM_JS(char*, __packString, (char* jsstr), {
+  if (jsstr === null || jsstr === undefined) {
+    return 0; //  NULL
+  }
+  var length = lengthBytesUTF8(jsstr) + 1;
+  var ptr = _malloc(length);
+  stringToUTF8(jsstr, ptr, length);
+  return ptr;
+});
+
+
+
 
 // api
 EM_JS(void, OpenScreen, (), { return Module.api.OpenScreen() });
@@ -57,14 +69,14 @@ EM_JS(void, FillArea, (int x, int y, int w, int h, int color), { Module.api.Fill
 // void MirrorBitmap(ibitmap *bm, int m);
 
 // char **EnumFonts();
-EM_JS(ifont*, jsOpenFont, (const char *name, int size, int aa), { return Module.api.OpenFont(UTF8ToString(name), size, aa) }); ifont *OpenFont(const char *name, int size, int aa) {return jsOpenFont(name, size, aa);}
+EM_JS(ifont*, jsOpenFont, (const char *name, int size, int aa), { return Module.api.OpenFont(UTF8ToString(name), size, aa) });ifont *OpenFont(const char *name, int size, int aa) {return jsOpenFont(name, size, aa);}
 EM_JS(void, CloseFont, (ifont *f), { return Module.api.CloseFont(f) });
 EM_JS(void, SetFont, (ifont *font, int color), { return Module.api.SetFont(font, color) });
 // ifont *GetFont();
 // void DrawString(int x, int y, const char *s);
 // void DrawStringR(int x, int y, const char *s);
 // int TextRectHeight(int width, const char *s, int flags);
-EM_JS(char*, DrawTextRect, (int x, int y, int w, int h, const char *s, int flags), { return Module.api.DrawTextRect(x, y, w, h, UTF8ToString(s), flags) });
+EM_JS(char*, DrawTextRect, (int x, int y, int w, int h, const char *s, int flags), { return __packString(Module.api.DrawTextRect(x, y, w, h, UTF8ToString(s), flags)) });
 // char *DrawTextRect2(irect *rect, const char *s);
 // int CharWidth(unsigned  short c);
 // int StringWidthExt(const char *s, int l);

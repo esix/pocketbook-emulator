@@ -29,63 +29,78 @@ function updateStatus(msg) {
 let main_handler;
 
 
-// API функции
-// Придется сделать объект глобальным
-const inkviewAPI = {
-  OpenScreen: () => { debugger },
-  OpenScreenExt: () => {debugger},
-  InkViewMain: (pfnCallback) => {
+class InkviewApi {
+  OpenScreen() { debugger }
+  OpenScreenExt() {debugger}
+  InkViewMain (pfnCallback) {
     main_handler = pfnCallback;
     const result = callMainHandler(EVT_INIT, 0, 0);
     console.log(result); // 10
-  },
-  CloseApp: () => { updateStatus("Application closed");},
+  }
+  CloseApp() {
+    updateStatus("Application closed");
+  }
 
-  ScreenWidth: () => canvas.width,                      // 600
-  ScreenHeight: () => canvas.height,                    // 800
+  ScreenWidth() {
+    return canvas.width                      // 600
+  }
+  ScreenHeight() {
+    return canvas.height                    // 800
+  }
 
-  SetOrientation: (n) => {debugger},
-  GetOrientation: () => 0,
-  SetGlobalOrientation: (n) => { debugger },
-  GetGlobalOrientation: () => -1,
-  QueryGSensor: () => 1,
+  SetOrientation(n) {
+    debugger
+  }
+  GetOrientation() {
+  return 0;
+}
+  SetGlobalOrientation(n)  {
+    debugger
+  }
+  GetGlobalOrientation(){
+    return -1
+  }
+  QueryGSensor () {
+    return 1
+  }
   // void SetGSensor(int mode);
   // int ReadGSensor(int *x, int *y, int *z);
   // void CalibrateGSensor();
 
-  ClearScreen: () => {
+  ClearScreen() {
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     updateStatus("Screen cleared");
-  },
-  SetClip: (x, y, w, h) => {debugger},
-  DrawPixel: (x, y, color) => { debugger;  },
-  DrawLine: function(x1, y1, x2, y2, color) {
+  }
+  SetClip(x, y, w, h) {debugger}
+  DrawPixel(x, y, color) { debugger;  }
+  DrawLine(x1, y1, x2, y2, color) {
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
     ctx.strokeStyle = `#${(color >>> 0).toString(16).padStart(6, '0')}`;
     ctx.stroke();
     updateStatus(`Line drawn: (${x1},${y1}) to (${x2},${y2})`);
-  },
+  }
 
-  FillArea: function(x, y, w, h, color) {
+  FillArea(x, y, w, h, color) {
     ctx.fillStyle = `#${(color >>> 0).toString(16).padStart(6, '0')}`;
     ctx.fillRect(x, y, w, h);
     updateStatus(`Area filled: (${x},${y}) ${w}x${h}`);
-  },
+  }
 
-  DrawTextRect: function(x, y, w, h, text, flags) {
+  DrawTextRect(x, y, w, h, text, flags) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#000000';
-    ctx.font = '20px Arial';
+    ctx.font = '20px LiberationSans';
     ctx.fillText(text, x + w / 2, y + h / 2);
     updateStatus(`Text drawn: "${text}" at (${x},${y})`);
-  },
+  }
 
-  _fonts: [],
-  OpenFont: (name, size, aa) => {
+  _fonts = [];
+
+  OpenFont(name, size, aa) {
     ctx.font = `${size}px "${name}"`;
     updateStatus(`Font set: "${name}", size ${size}`);
     // TODO: return ifont*
@@ -106,28 +121,26 @@ const inkviewAPI = {
       baseline: 8,
       fdata: null,    // really some data
     });
-
     return 1;
-  },
+  }
   CloseFont(f) {
-  },
+  }
   SetFont(font, color) {
-  },
+  }
   FullUpdate() {
-  },
+  }
+}
 
-};
 
 // Функция для вызова обработчика событий из C
 function callMainHandler(event_type, param_one, param_two) {
   const myFunction = _Module.wasmTable.get(main_handler);
 
-  // Вызываем функцию
+  // call handler registered as main_handler
   const result = myFunction(event_type, param_one, param_two);
-  console.log(result); // 10
   return result;
-
 }
+
 
 // Инициализация приложения
 async function initApp() {
@@ -142,15 +155,13 @@ async function initApp() {
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Сохраняем API в глобальной области
-    window.inkviewAPI = inkviewAPI;
 
     updateStatus("Loading WASM module...");
 
     const {default: createPocketBookModule} = await import('../projects/demo01/index.mjs');
 
     // Загружаем модуль
-    _Module = await createPocketBookModule({api: inkviewAPI});
+    _Module = await createPocketBookModule({api: new InkviewApi()});
 
     updateStatus("WASM module loaded");
 
