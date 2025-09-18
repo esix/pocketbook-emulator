@@ -2,7 +2,7 @@
 #include <emscripten.h>
 
 // helper function
-EM_JS(char*, __packString, (char* jsstr), {
+EM_JS(char*, __pack_string, (char* jsstr), {
   if (jsstr === null || jsstr === undefined) {
     return 0; //  NULL
   }
@@ -11,6 +11,36 @@ EM_JS(char*, __packString, (char* jsstr), {
   stringToUTF8(jsstr, ptr, length);
   return ptr;
 });
+
+// EMSCRIPTEN_KEEPALIVE
+// char* _pack_string(char* ptr) {
+//     return strdup(ptr);
+// }
+
+EMSCRIPTEN_KEEPALIVE
+ifont* _create_ifont(const char* name, const char* family, int size, unsigned char aa,
+                    unsigned char isbold, unsigned char isitalic, unsigned short charset,
+                    int color, int height, int linespacing, int baseline, void* fdata) {
+    ifont* font = (ifont*)malloc(sizeof(ifont));
+    if (!font) return NULL;
+
+    font->name = name ? strdup(name) : NULL;
+    font->family = family ? strdup(family) : NULL;
+    font->size = size;
+    font->aa = aa;
+    font->isbold = isbold;
+    font->isitalic = isitalic;
+    font->_r1 = 0;
+    font->charset = charset;
+    font->_r2 = 0;
+    font->color = color;
+    font->height = height;
+    font->linespacing = linespacing;
+    font->baseline = baseline;
+    font->fdata = fdata;
+
+    return font;
+}
 
 
 
@@ -69,14 +99,40 @@ EM_JS(void, FillArea, (int x, int y, int w, int h, int color), { Module.api.Fill
 // void MirrorBitmap(ibitmap *bm, int m);
 
 // char **EnumFonts();
-EM_JS(ifont*, jsOpenFont, (const char *name, int size, int aa), { return Module.api.OpenFont(UTF8ToString(name), size, aa) });ifont *OpenFont(const char *name, int size, int aa) {return jsOpenFont(name, size, aa);}
+EM_JS(ifont*, jsOpenFont, (const char *name, int size, int aa), {
+    var fontData = Module.api.OpenFont(UTF8ToString(name), size, aa);
+    if (!fontData) return 0;
+
+    var namePtr = __pack_string(fontData.name);
+    var familyPtr = __pack_string(fontData.family);
+
+    // Вызываем C-функцию (emscripten добавляет _ к имени)
+    return Module.__create_ifont(
+            namePtr,
+            familyPtr,
+            fontData.size,
+            fontData.aa,
+            fontData.isbold,
+            fontData.isitalic,
+            fontData.charset,
+            fontData.color,
+            fontData.height,
+            fontData.linespacing,
+            fontData.baseline,
+            fontData.fdata // например, ID объекта
+    );
+});
+ifont *OpenFont(const char *name, int size, int aa) {return jsOpenFont(name, size, aa);}
+
+
+
 EM_JS(void, CloseFont, (ifont *f), { return Module.api.CloseFont(f) });
 EM_JS(void, SetFont, (ifont *font, int color), { return Module.api.SetFont(font, color) });
 // ifont *GetFont();
 // void DrawString(int x, int y, const char *s);
 // void DrawStringR(int x, int y, const char *s);
 // int TextRectHeight(int width, const char *s, int flags);
-EM_JS(char*, DrawTextRect, (int x, int y, int w, int h, const char *s, int flags), { return __packString(Module.api.DrawTextRect(x, y, w, h, UTF8ToString(s), flags)) });
+EM_JS(char*, DrawTextRect, (int x, int y, int w, int h, const char *s, int flags), { return __pack_string(Module.api.DrawTextRect(x, y, w, h, UTF8ToString(s), flags)) });
 // char *DrawTextRect2(irect *rect, const char *s);
 // int CharWidth(unsigned  short c);
 // int StringWidthExt(const char *s, int l);

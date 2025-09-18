@@ -96,6 +96,7 @@ class InkviewApi {
     ctx.font = '20px LiberationSans';
     ctx.fillText(text, x + w / 2, y + h / 2);
     updateStatus(`Text drawn: "${text}" at (${x},${y})`);
+    return "ResultOfDrawTextRect";
   }
 
   _fonts = [];
@@ -104,8 +105,7 @@ class InkviewApi {
     ctx.font = `${size}px "${name}"`;
     updateStatus(`Font set: "${name}", size ${size}`);
     // TODO: return ifont*
-    // return (ifont*)1
-    this._fonts.push({
+    const font = {
       name: name,
       family: 'LiberationSans',
       size: size,
@@ -120,8 +120,9 @@ class InkviewApi {
       linespacing: 10,
       baseline: 8,
       fdata: null,    // really some data
-    });
-    return 1;
+    };
+    this._fonts.push(font);
+    return font;
   }
   CloseFont(f) {
   }
